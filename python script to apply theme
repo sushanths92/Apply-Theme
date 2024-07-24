@@ -54,6 +54,8 @@ def update_report_json():
                 item_path = os.path.join(pbi_resources_folder, item)
                 if os.path.isfile(item_path):
                     resource_type = 'Image' if item.lower().endswith(('.png', '.svg', '.jpg', '.jpeg')) else 'File'
+                    if item.lower().endswith('.json'):
+                        resource_type = 'CustomTheme'
                     new_item = {
                         'name': item,
                         'path': item,
