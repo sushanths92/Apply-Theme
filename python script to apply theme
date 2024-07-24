@@ -1,0 +1,94 @@
+import os
+import json
+import shutil
+import zipfile
+
+# Define paths
+script_dir = os.path.dirname(os.path.realpath(__file__))
+standard_settings_folder = os.path.join(script_dir, "standard_settings")
+destination_folder = os.path.join(script_dir, "pbi_file_in_pbip_format")
+
+# Load and parse JSON files
+def load_json_file(file_path):
+    with open(file_path, 'r') as file:
+        json_content = json.load(file)
+    return json_content
+
+# Save JSON to file
+def save_json_file(json_object, file_path):
+    with open(file_path, 'w') as file:
+        json.dump(json_object, file, indent=4)
+
+# Update specific sections in settings
+def update_settings(standard_settings, destination_settings):
+    # Update customTheme section
+    destination_settings['themeCollection']['customTheme'] = standard_settings['themeCollection']['customTheme']
+    
+    # Update RegisteredResources section
+    destination_settings['definition']['StaticResources']['RegisteredResources'] = standard_settings['definition']['StaticResources']['RegisteredResources']
+
+    return destination_settings
+
+# Copy RegisteredResources files
+def copy_registered_resources(standard_resources_path, destination_resources_path):
+    if not os.path.exists(destination_resources_path):
+        os.makedirs(destination_resources_path)
+
+    for item in os.listdir(standard_resources_path):
+        source = os.path.join(standard_resources_path, item)
+        destination = os.path.join(destination_resources_path, item)
+        if os.path.isdir(source):
+            shutil.copytree(source, destination, dirs_exist_ok=True)
+        else:
+            shutil.copy2(source, destination)
+
+# Process .pbip files
+def process_pbip_files(standard_settings_folder, destination_folder):
+    # Define paths inside standard settings
+    standard_report_json_path = os.path.join(standard_settings_folder, "KLA Power BI Template Visuals.Report", "definition", "report.json")
+    standard_resources_path = os.path.join(standard_settings_folder, "KLA Power BI Template Visuals.Report", "StaticResources", "RegisteredResources")
+
+    # Load standard settings
+    standard_report_settings = load_json_file(standard_report_json_path)
+
+    # Get all .pbip files in the destination folder
+    for item in os.listdir(destination_folder):
+        if item.endswith(".pbip"):
+            pbip_file_path = os.path.join(destination_folder, item)
+
+            # Extract the pbip file to a temporary folder
+            temp_folder = os.path.join(destination_folder, "temp")
+            if os.path.exists(temp_folder):
+                shutil.rmtree(temp_folder)
+            os.makedirs(temp_folder)
+            with zipfile.ZipFile(pbip_file_path, 'r') as zip_ref:
+                zip_ref.extractall(temp_folder)
+
+            # Define paths inside the extracted pbip structure
+            destination_report_json_path = os.path.join(temp_folder, "KLA Power BI Template Visuals.Report", "definition", "report.json")
+            destination_resources_path = os.path.join(temp_folder, "KLA Power BI Template Visuals.Report", "StaticResources", "RegisteredResources")
+
+            # Load destination settings
+            destination_report_settings = load_json_file(destination_report_json_path)
+
+            # Update settings
+            updated_report_settings = update_settings(standard_report_settings, destination_report_settings)
+
+            # Save updated settings
+            save_json_file(updated_report_settings, destination_report_json_path)
+
+            # Copy RegisteredResources files
+            copy_registered_resources(standard_resources_path, destination_resources_path)
+
+            # Recompress the temp folder back to pbip file
+            new_pbip_file = os.path.join(destination_folder, f"{os.path.splitext(item)[0]}_updated.pbip")
+            shutil.make_archive(new_pbip_file.replace(".pbip", ""), 'zip', temp_folder)
+            os.rename(new_pbip_file.replace(".pbip", ".zip"), new_pbip_file)
+
+            # Clean up temp folder
+            shutil.rmtree(temp_folder)
+
+            print(f"Processed: {new_pbip_file}")
+
+# Run the script
+process_pbip_files(standard_settings_folder, destination_folder)
