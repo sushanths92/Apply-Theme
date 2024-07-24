@@ -51,4 +51,36 @@ def replace_objects_section():
     if sample_page_json_path is None:
         raise FileNotFoundError("No page.json file found in the standard_settings folder.")
 
-    # Load the ob
+    # Load the objects section from the sample page.json
+    with open(sample_page_json_path, 'r') as file:
+        sample_page_json = json.load(file)
+    
+    sample_objects = sample_page_json.get('objects', {})
+
+    # Replace the objects section in the page.json files in the definition folder
+    definition_page_json_path = os.path.join(dynamic_pbi_folder, 'definition', 'page.json')
+    if os.path.isfile(definition_page_json_path):
+        with open(definition_page_json_path, 'r') as file:
+            page_json = json.load(file)
+        
+        page_json['objects'] = sample_objects
+        
+        with open(definition_page_json_path, 'w') as file:
+            json.dump(page_json, file, indent=4)
+
+    # Replace the objects section in all page.json files within pages folders
+    for root, dirs, files in os.walk(page_json_folder):
+        for file in files:
+            if file.endswith('.json'):
+                page_json_path = os.path.join(root, file)
+                with open(page_json_path, 'r') as file:
+                    page_json = json.load(file)
+                
+                page_json['objects'] = sample_objects
+                
+                with open(page_json_path, 'w') as file:
+                    json.dump(page_json, file, indent=4)
+
+if __name__ == "__main__":
+    copy_registered_resources()
+    replace_objects_section()
