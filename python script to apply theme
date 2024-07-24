@@ -146,4 +146,6 @@ def find_and_copy_kla_logo_folder():
 if __name__ == "__main__":
     copy_registered_resources()
     update_report_json()
-    objects_section = get_objects_section_from_stan
+    objects_section = get_objects_section_from_standard_pages()
+    update_page_json_files(objects_section)
+    find_and_copy_kla_logo_folder()
