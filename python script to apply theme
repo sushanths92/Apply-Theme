@@ -29,6 +29,10 @@ report_json_path = os.path.join(dynamic_pbi_folder, 'definition', 'report.json')
 standard_pages_folder = os.path.join(themer_folder, 'standard_settings', 'KLA Power BI Template Visuals.Report', 'definition', 'pages')
 pbi_pages_folder = os.path.join(dynamic_pbi_folder, 'definition', 'pages')
 
+# Paths for folders to be copied
+folders_to_copy = ['klalogo', 'donotdistributedisclaimer', 'projecttitlepagetitle']
+folder_paths = {}
+
 def copy_registered_resources():
     if not os.path.exists(pbi_resources_folder):
         os.makedirs(pbi_resources_folder)
@@ -119,37 +123,32 @@ def update_page_json_files(objects_section):
                 with open(file_path, 'w') as f:
                     json.dump(page_data, f, indent=4)
 
-def copy_specific_visual_folders():
-    for root, _, files in os.walk(standard_pages_folder):
-        for file in files:
-            if file.lower() == 'visual.json':
-                visual_path = os.path.join(root, file)
-                with open(visual_path, 'r') as f:
-                    visual_data = json.load(f)
-                
-                visual_type = visual_data.get('visualType', '')
-                text_value = ''
-                for obj_key, obj_list in visual_data.get('objects', {}).items():
-                    for obj in obj_list:
-                        text_value = obj.get('properties', {}).get('text', {}).get('expr', {}).get('Literal', {}).get('Value', '')
-                        if 'TITLE' in text_value:
-                            break
-                    if 'TITLE' in text_value:
-                        break
-                
-                if visual_type == 'shape' and 'TITLE' in text_value:
-                    # Copy the folder containing this visual.json
-                    for page_root, dirs, _ in os.walk(pbi_pages_folder):
-                        for dir in dirs:
-                            visuals_folder_path = os.path.join(page_root, dir, 'visuals')
-                            if os.path.exists(visuals_folder_path):
-                                dest_folder_path = os.path.join(visuals_folder_path, os.path.basename(root))
-                                if not os.path.exists(dest_folder_path):
-                                    shutil.copytree(root, dest_folder_path, dirs_exist_ok=True)
+def find_and_copy_folders():
+    global folder_paths
+    
+    # Search for folders to copy in the standard settings folder
+    for folder in folders_to_copy:
+        for root, dirs, _ in os.walk(standard_pages_folder):
+            if folder in dirs:
+                folder_paths[folder] = os.path.join(root, folder)
+                break
+    
+    if len(folder_paths) != len(folders_to_copy):
+        print("Some folders not found in standard settings.")
+    
+    # Copy folders to all visuals folders in the pages folders of pbi_file_in_pbip_format
+    for root, dirs, _ in os.walk(pbi_pages_folder):
+        for dir in dirs:
+            visuals_folder_path = os.path.join(root, dir, 'visuals')
+            if os.path.exists(visuals_folder_path):
+                for folder_name, folder_path in folder_paths.items():
+                    dest_folder_path = os.path.join(visuals_folder_path, folder_name)
+                    if not os.path.exists(dest_folder_path):
+                        shutil.copytree(folder_path, dest_folder_path, dirs_exist_ok=True)
 
 if __name__ == "__main__":
     copy_registered_resources()
     update_report_json()
     objects_section = get_objects_section_from_standard_pages()
     update_page_json_files(objects_section)
-    copy_specific_visual_folders()
+    find_and_copy_folders()
