@@ -42,9 +42,13 @@ def update_report_json():
     with open(report_json_path, 'r') as file:
         data = json.load(file)
     
-    # Find and update the RegisteredResources section
+    # Debugging: Print current RegisteredResources items
+    print("Original RegisteredResources items:")
     for package in data.get('resourcePackages', []):
         if package['name'] == 'RegisteredResources':
+            for item in package.get('items', []):
+                print(f"Name: {item['name']}, Type: {item['type']}")
+
             # Get current items in RegisteredResources
             existing_items = {item['name']: item for item in package.get('items', [])}
             
@@ -62,6 +66,11 @@ def update_report_json():
                         'type': resource_type
                     }
                     new_items.append(new_item)
+            
+            # Debugging: Print new items to be added
+            print("New items to be added:")
+            for item in new_items:
+                print(f"Name: {item['name']}, Type: {item['type']}")
             
             # Update the items list in RegisteredResources
             for item in new_items:
