@@ -7,7 +7,21 @@ themer_folder = current_dir
 
 # Define paths within the Themer folder
 standard_resources_folder = os.path.join(themer_folder, 'standard_settings', 'KLA Power BI Template Visuals.Report', 'StaticResources', 'RegisteredResources')
-pbi_resources_folder = os.path.join(themer_folder, 'pbi_file_in_pbip_format', 'KLA Power BI Template Visuals.Report', 'StaticResources', 'RegisteredResources')
+
+# Find the dynamic folder name within the pbi_file_in_pbip_format folder
+pbi_file_folder = os.path.join(themer_folder, 'pbi_file_in_pbip_format')
+dynamic_pbi_folder = None
+
+for item in os.listdir(pbi_file_folder):
+    item_path = os.path.join(pbi_file_folder, item)
+    if os.path.isdir(item_path) and item.endswith('.Report'):
+        dynamic_pbi_folder = item_path
+        break
+
+if dynamic_pbi_folder is None:
+    raise FileNotFoundError("No folder ending with '.Report' found in the pbi_file_in_pbip_format directory.")
+
+pbi_resources_folder = os.path.join(dynamic_pbi_folder, 'StaticResources', 'RegisteredResources')
 
 def copy_registered_resources():
     if not os.path.exists(pbi_resources_folder):
