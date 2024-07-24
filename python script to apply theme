@@ -1,5 +1,6 @@
 import os
 import shutil
+import json
 
 # Determine the path to the Themer folder
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -22,6 +23,7 @@ if dynamic_pbi_folder is None:
     raise FileNotFoundError("No folder ending with '.Report' found in the pbi_file_in_pbip_format directory.")
 
 pbi_resources_folder = os.path.join(dynamic_pbi_folder, 'StaticResources', 'RegisteredResources')
+report_json_path = os.path.join(dynamic_pbi_folder, 'definition', 'report.json')
 
 def copy_registered_resources():
     if not os.path.exists(pbi_resources_folder):
@@ -36,5 +38,40 @@ def copy_registered_resources():
         elif os.path.isdir(s):
             shutil.copytree(s, d, dirs_exist_ok=True)
 
+def update_report_json():
+    with open(report_json_path, 'r') as file:
+        data = json.load(file)
+    
+    # Find and update the RegisteredResources section
+    for package in data.get('resourcePackages', []):
+        if package['name'] == 'RegisteredResources':
+            # Get current items in RegisteredResources
+            existing_items = {item['name']: item for item in package.get('items', [])}
+            
+            # Add new items to the RegisteredResources section
+            new_items = []
+            for item in os.listdir(pbi_resources_folder):
+                item_path = os.path.join(pbi_resources_folder, item)
+                if os.path.isfile(item_path):
+                    resource_type = 'Image' if item.lower().endswith(('.png', '.svg', '.jpg', '.jpeg')) else 'File'
+                    new_item = {
+                        'name': item,
+                        'path': item,
+                        'type': resource_type
+                    }
+                    new_items.append(new_item)
+            
+            # Update the items list in RegisteredResources
+            for item in new_items:
+                if item['name'] not in existing_items:
+                    package['items'].append(item)
+            
+            break
+    
+    # Write the updated JSON data back to the file
+    with open(report_json_path, 'w') as file:
+        json.dump(data, file, indent=4)
+
 if __name__ == "__main__":
     copy_registered_resources()
+    update_report_json()
