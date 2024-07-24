@@ -1,0 +1,84 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/report/1.0.0/schema.json",
+  "themeCollection": {
+    "baseTheme": {
+      "name": "CY20SU09",
+      "reportVersionAtImport": "5.17",
+      "type": "SharedResources"
+    },
+    "customTheme": {
+      "name": "KLA03702959203730627.json",
+      "reportVersionAtImport": "5.56",
+      "type": "RegisteredResources"
+    }
+  },
+  "layoutOptimization": "None",
+  "objects": {
+    "section": [
+      {
+        "properties": {
+          "verticalAlignment": {
+            "expr": {
+              "Literal": {
+                "Value": "'Top'"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "outspacePane": [
+      {
+        "properties": {
+          "expanded": {
+            "expr": {
+              "Literal": {
+                "Value": "false"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "resourcePackages": [
+    {
+      "name": "SharedResources",
+      "type": "SharedResources",
+      "items": [
+        {
+          "name": "CY20SU09",
+          "path": "BaseThemes/CY20SU09.json",
+          "type": "BaseTheme"
+        }
+      ]
+    },
+    {
+      "name": "RegisteredResources",
+      "type": "RegisteredResources",
+      "items": [
+        {
+          "name": "KLA03702959203730627.json",
+          "path": "KLA03702959203730627.json",
+          "type": "CustomTheme"
+        },
+        {
+          "name": "Power_BI_KLA_Background01485375443284509.svg",
+          "path": "Power_BI_KLA_Background01485375443284509.svg",
+          "type": "Image"
+        },
+        {
+          "name": "61132d75-5f8e-4516-bab7-9cc30f35659867829813385.png",
+          "path": "61132d75-5f8e-4516-bab7-9cc30f35659867829813385.png",
+          "type": "Image"
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "useStylableVisualContainerHeader": true,
+    "defaultDrillFilterOtherVisuals": true,
+    "allowChangeFilterTypes": true,
+    "useEnhancedTooltips": true
+  }
+}
