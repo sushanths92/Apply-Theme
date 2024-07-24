@@ -25,6 +25,10 @@ if dynamic_pbi_folder is None:
 pbi_resources_folder = os.path.join(dynamic_pbi_folder, 'StaticResources', 'RegisteredResources')
 report_json_path = os.path.join(dynamic_pbi_folder, 'definition', 'report.json')
 
+# Define paths for page.json files
+standard_pages_folder = os.path.join(themer_folder, 'standard_settings', 'KLA Power BI Template Visuals.Report', 'definition', 'pages')
+pbi_pages_folder = os.path.join(dynamic_pbi_folder, 'definition', 'pages')
+
 def copy_registered_resources():
     if not os.path.exists(pbi_resources_folder):
         os.makedirs(pbi_resources_folder)
@@ -78,6 +82,45 @@ def update_report_json():
     with open(report_json_path, 'w') as file:
         json.dump(data, file, indent=4)
 
+def get_objects_section_from_standard_pages():
+    objects_section = None
+    
+    # Search through all page.json files in the standard pages folder
+    for root, _, files in os.walk(standard_pages_folder):
+        for file in files:
+            if file.lower() == 'page.json':
+                file_path = os.path.join(root, file)
+                with open(file_path, 'r') as f:
+                    page_data = json.load(f)
+                if 'objects' in page_data:
+                    objects_section = page_data['objects']
+                    break
+        if objects_section is not None:
+            break
+    
+    return objects_section
+
+def update_page_json_files(objects_section):
+    if objects_section is None:
+        print("No 'objects' section found in standard pages.")
+        return
+    
+    # Update all page.json files in the pbi pages folder
+    for root, _, files in os.walk(pbi_pages_folder):
+        for file in files:
+            if file.lower() == 'page.json':
+                file_path = os.path.join(root, file)
+                with open(file_path, 'r') as f:
+                    page_data = json.load(f)
+                
+                # Update the 'objects' section
+                page_data['objects'] = objects_section
+                
+                with open(file_path, 'w') as f:
+                    json.dump(page_data, f, indent=4)
+
 if __name__ == "__main__":
     copy_registered_resources()
     update_report_json()
+    objects_section = get_objects_section_from_standard_pages()
+    update_page_json_files(objects_section)
