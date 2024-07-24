@@ -135,11 +135,13 @@ def find_and_copy_kla_logo_folder():
         print("KLA Logo folder not found in standard settings.")
         return
 
-    # Copy KLA Logo folder to all pages folders in the pbi_file_in_pbip_format
+    # Copy KLA Logo folder to all visuals folders in the pages folders of pbi_file_in_pbip_format
     for root, dirs, _ in os.walk(pbi_pages_folder):
         for dir in dirs:
-            page_folder_path = os.path.join(root, dir)
-            kla_logo_dest_path = os.path.join(page_folder_path, kla_logo_folder_name)
+            visuals_folder_path = os.path.join(root, dir, 'visuals')
+            if not os.path.exists(visuals_folder_path):
+                os.makedirs(visuals_folder_path)
+            kla_logo_dest_path = os.path.join(visuals_folder_path, kla_logo_folder_name)
             if not os.path.exists(kla_logo_dest_path):
                 shutil.copytree(kla_logo_folder_path, kla_logo_dest_path, dirs_exist_ok=True)
 
