@@ -8,10 +8,11 @@ themer_folder = current_dir
 
 # Define paths within the Themer folder
 standard_resources_folder = os.path.join(themer_folder, 'standard_settings', 'KLA Power BI Template Visuals.Report', 'StaticResources', 'RegisteredResources')
-pbi_file_folder = os.path.join(themer_folder, 'pbi_file_in_pbip_format')
 
 # Find the dynamic folder name within the pbi_file_in_pbip_format folder
+pbi_file_folder = os.path.join(themer_folder, 'pbi_file_in_pbip_format')
 dynamic_pbi_folder = None
+
 for item in os.listdir(pbi_file_folder):
     item_path = os.path.join(pbi_file_folder, item)
     if os.path.isdir(item_path) and item.endswith('.Report'):
@@ -23,13 +24,12 @@ if dynamic_pbi_folder is None:
 
 pbi_resources_folder = os.path.join(dynamic_pbi_folder, 'StaticResources', 'RegisteredResources')
 report_json_path = os.path.join(dynamic_pbi_folder, 'definition', 'report.json')
-page_json_folder = os.path.join(dynamic_pbi_folder, 'pages')
 
-# Function to copy registered resources
 def copy_registered_resources():
     if not os.path.exists(pbi_resources_folder):
         os.makedirs(pbi_resources_folder)
-    
+        
+    # Copy all files from the standard resources folder to the pbi resources folder
     for item in os.listdir(standard_resources_folder):
         s = os.path.join(standard_resources_folder, item)
         d = os.path.join(pbi_resources_folder, item)
@@ -38,49 +38,42 @@ def copy_registered_resources():
         elif os.path.isdir(s):
             shutil.copytree(s, d, dirs_exist_ok=True)
 
-# Function to replace the objects section in page.json files
-def replace_objects_section():
-    # Find a sample page.json in the standard_settings folder
-    standard_page_json_folder = os.path.join(themer_folder, 'standard_settings', 'KLA Power BI Template Visuals.Report', 'definition', 'pages')
-    sample_page_json_path = None
-    for item in os.listdir(standard_page_json_folder):
-        if item.endswith('.json'):
-            sample_page_json_path = os.path.join(standard_page_json_folder, item)
-            break
-
-    if sample_page_json_path is None:
-        raise FileNotFoundError("No page.json file found in the standard_settings folder.")
-
-    # Load the objects section from the sample page.json
-    with open(sample_page_json_path, 'r') as file:
-        sample_page_json = json.load(file)
+def update_report_json():
+    with open(report_json_path, 'r') as file:
+        data = json.load(file)
     
-    sample_objects = sample_page_json.get('objects', {})
-
-    # Replace the objects section in the page.json files in the definition folder
-    definition_page_json_path = os.path.join(dynamic_pbi_folder, 'definition', 'page.json')
-    if os.path.isfile(definition_page_json_path):
-        with open(definition_page_json_path, 'r') as file:
-            page_json = json.load(file)
-        
-        page_json['objects'] = sample_objects
-        
-        with open(definition_page_json_path, 'w') as file:
-            json.dump(page_json, file, indent=4)
-
-    # Replace the objects section in all page.json files within pages folders
-    for root, dirs, files in os.walk(page_json_folder):
-        for file in files:
-            if file.endswith('.json'):
-                page_json_path = os.path.join(root, file)
-                with open(page_json_path, 'r') as file:
-                    page_json = json.load(file)
-                
-                page_json['objects'] = sample_objects
-                
-                with open(page_json_path, 'w') as file:
-                    json.dump(page_json, file, indent=4)
+    # Find and update the RegisteredResources section
+    for package in data.get('resourcePackages', []):
+        if package['name'] == 'RegisteredResources':
+            # Get current items in RegisteredResources
+            existing_items = {item['name']: item for item in package.get('items', [])}
+            
+            # Add new items to the RegisteredResources section
+            new_items = []
+            for item in os.listdir(pbi_resources_folder):
+                item_path = os.path.join(pbi_resources_folder, item)
+                if os.path.isfile(item_path):
+                    resource_type = 'Image' if item.lower().endswith(('.png', '.svg', '.jpg', '.jpeg')) else 'File'
+                    if item.lower().endswith('.json'):
+                        resource_type = 'CustomTheme'
+                    new_item = {
+                        'name': item,
+                        'path': item,
+                        'type': resource_type
+                    }
+                    new_items.append(new_item)
+            
+            # Update the items list in RegisteredResources
+            for item in new_items:
+                if item['name'] not in existing_items:
+                    package['items'].append(item)
+            
+            break
+    
+    # Write the updated JSON data back to the file
+    with open(report_json_path, 'w') as file:
+        json.dump(data, file, indent=4)
 
 if __name__ == "__main__":
     copy_registered_resources()
-    replace_objects_section()
+    update_report_json()
