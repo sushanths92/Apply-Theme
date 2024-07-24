@@ -29,9 +29,9 @@ report_json_path = os.path.join(dynamic_pbi_folder, 'definition', 'report.json')
 standard_pages_folder = os.path.join(themer_folder, 'standard_settings', 'KLA Power BI Template Visuals.Report', 'definition', 'pages')
 pbi_pages_folder = os.path.join(dynamic_pbi_folder, 'definition', 'pages')
 
-# Path for KLA Logo folder
-kla_logo_folder_name = 'KLA Logo'
-kla_logo_folder_path = None
+# Paths for folders to be copied
+folders_to_copy = ['KLA_Logo', 'Disclaimer', 'Page_Title']
+folder_paths = {}
 
 def copy_registered_resources():
     if not os.path.exists(pbi_resources_folder):
@@ -123,30 +123,32 @@ def update_page_json_files(objects_section):
                 with open(file_path, 'w') as f:
                     json.dump(page_data, f, indent=4)
 
-def find_and_copy_kla_logo_folder():
-    global kla_logo_folder_path
-    # Search for KLA Logo folder in the standard settings folder
-    for root, dirs, _ in os.walk(standard_pages_folder):
-        if kla_logo_folder_name in dirs:
-            kla_logo_folder_path = os.path.join(root, kla_logo_folder_name)
-            break
-
-    if kla_logo_folder_path is None:
-        print("KLA Logo folder not found in standard settings.")
-        return
-
-    # Copy KLA Logo folder to all visuals folders in the pages folders of pbi_file_in_pbip_format
+def find_and_copy_folders():
+    global folder_paths
+    
+    # Search for folders to copy in the standard settings folder
+    for folder in folders_to_copy:
+        for root, dirs, _ in os.walk(standard_pages_folder):
+            if folder in dirs:
+                folder_paths[folder] = os.path.join(root, folder)
+                break
+    
+    if len(folder_paths) != len(folders_to_copy):
+        print("Some folders not found in standard settings.")
+    
+    # Copy folders to all visuals folders in the pages folders of pbi_file_in_pbip_format
     for root, dirs, _ in os.walk(pbi_pages_folder):
         for dir in dirs:
             visuals_folder_path = os.path.join(root, dir, 'visuals')
             if os.path.exists(visuals_folder_path):
-                kla_logo_dest_path = os.path.join(visuals_folder_path, kla_logo_folder_name)
-                if not os.path.exists(kla_logo_dest_path):
-                    shutil.copytree(kla_logo_folder_path, kla_logo_dest_path, dirs_exist_ok=True)
+                for folder_name, folder_path in folder_paths.items():
+                    dest_folder_path = os.path.join(visuals_folder_path, folder_name)
+                    if not os.path.exists(dest_folder_path):
+                        shutil.copytree(folder_path, dest_folder_path, dirs_exist_ok=True)
 
 if __name__ == "__main__":
     copy_registered_resources()
     update_report_json()
     objects_section = get_objects_section_from_standard_pages()
     update_page_json_files(objects_section)
-    find_and_copy_kla_logo_folder()
+    find_and_copy_folders()
