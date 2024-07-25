@@ -33,6 +33,21 @@ pbi_pages_folder = os.path.join(dynamic_pbi_folder, 'definition', 'pages')
 folders_to_copy = ['klalogo', 'donotdistributedisclaimer', 'projecttitlepagetitle']
 folder_paths = {}
 
+# Define paths for SemanticModel folders
+standard_semantic_model_folder = None
+pbi_semantic_model_folder = None
+
+# Locate the .SemanticModel folders in standard_settings and pbi_file_in_pbip_format
+for item in os.listdir(os.path.join(themer_folder, 'standard_settings')):
+    if item.endswith('.SemanticModel'):
+        standard_semantic_model_folder = os.path.join(themer_folder, 'standard_settings', item)
+        break
+
+for item in os.listdir(pbi_file_folder):
+    if item.endswith('.SemanticModel'):
+        pbi_semantic_model_folder = os.path.join(pbi_file_folder, item)
+        break
+
 def copy_registered_resources():
     if not os.path.exists(pbi_resources_folder):
         os.makedirs(pbi_resources_folder)
@@ -146,9 +161,53 @@ def find_and_copy_folders():
                     if not os.path.exists(dest_folder_path):
                         shutil.copytree(folder_path, dest_folder_path, dirs_exist_ok=True)
 
+def copy_semantic_model_tables():
+    if standard_semantic_model_folder is None or pbi_semantic_model_folder is None:
+        print("SemanticModel folder not found in one of the directories.")
+        return
+    
+    standard_tables_folder = os.path.join(standard_semantic_model_folder, 'definition', 'tables')
+    pbi_tables_folder = os.path.join(pbi_semantic_model_folder, 'definition', 'tables')
+    
+    if not os.path.exists(pbi_tables_folder):
+        os.makedirs(pbi_tables_folder)
+    
+    # Copy all tables from standard tables folder to pbi tables folder
+    for item in os.listdir(standard_tables_folder):
+        s = os.path.join(standard_tables_folder, item)
+        d = os.path.join(pbi_tables_folder, item)
+        if os.path.isfile(s):
+            shutil.copy2(s, d)
+        elif os.path.isdir(s):
+            shutil.copytree(s, d, dirs_exist_ok=True)
+    
+    # Update the diagramLayout.json
+    update_diagram_layout()
+
+def update_diagram_layout():
+    standard_layout_path = os.path.join(standard_semantic_model_folder, 'diagramLayout.json')
+    pbi_layout_path = os.path.join(pbi_semantic_model_folder, 'diagramLayout.json')
+    
+    if not os.path.exists(standard_layout_path) or not os.path.exists(pbi_layout_path):
+        print("diagramLayout.json file not found in one of the directories.")
+        return
+    
+    with open(standard_layout_path, 'r') as f:
+        standard_layout = json.load(f)
+    
+    with open(pbi_layout_path, 'r') as f:
+        pbi_layout = json.load(f)
+    
+    # Merge or update the pbi_layout with the standard_layout tables information
+    pbi_layout['diagrams'][0]['nodes'] = pbi_layout.get('diagrams', [])[0].get('nodes', []) + standard_layout.get('diagrams', [])[0].get('nodes', [])
+    
+    with open(pbi_layout_path, 'w') as f:
+        json.dump(pbi_layout, f, indent=4)
+
 if __name__ == "__main__":
     copy_registered_resources()
     update_report_json()
     objects_section = get_objects_section_from_standard_pages()
     update_page_json_files(objects_section)
     find_and_copy_folders()
+    copy_semantic_model_tables()
